@@ -39,23 +39,21 @@ let evalRes = (res) => {
       console.log("newEarthquakes", newEarthquakes);
       const earthquakes = getEarthquakesBySelectedCriteria(newEarthquakes);
       console.log("earthquakes", earthquakes);
-      sendNewEarthQuakesNoti(earthquakes);
+      // sendNewEarthQuakesNoti(earthquakes);
+      sendTweetNewEarthquakes(earthquakes);
       writeEarthquakesToFile(networkEarthquakes);
       if (earthquakes.length === 0) {
-        console.log("Earthquake not happened");
-        writeEQToFile("Earthquake not happened");
         return;
       }
     })
     .catch((err) => console.log(err));
 };
 
-let sendNewEarthQuakesNoti = (earthquakes) => {
+const sendTweetNewEarthquakes = (earthquakes) => {
   earthquakes.forEach((earthquake) => {
-    sendNotification(earthquake);
-    // if (earthquake.mag >= 3.5) {
-    //   sendTweet(earthquake);
-    // }
+    if (earthquake.mag >= 3.5) {
+      sendTweet(earthquake);
+    }
   });
 };
 
@@ -124,48 +122,6 @@ const getEarthquakesBySelectedCriteria = (newEarthquakes) => {
     // }
   });
   return foundEarthquakes;
-};
-
-let writeEQToFile = (eq) => {
-  fs.writeFile("output.txt", eq, function (err) {
-    if (err) return console.log("eq to file hata", err);
-    console.log("Written output.txt");
-  });
-};
-
-let sendNotification = (earthquake) => {
-  let includedSegments = ["allmag"];
-  if (earthquake.mag >= 2.5) {
-    includedSegments.push("twofivemag");
-  }
-  if (earthquake.mag >= 4.5) {
-    includedSegments.push("fourfivemag");
-  }
-  fetch("https://onesignal.com/api/v1/notifications", {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + configJSON.OS_REST_KEY,
-      "Content-Type": "application/json",
-    },
-    // json: true,
-    body: JSON.stringify({
-      app_id: configJSON.OS_APP_ID,
-      included_segments: includedSegments,
-      contents: { en: `${earthquake.mag}-${earthquake.location}` },
-      headings: { en: "DEPREM" },
-      data: {
-        date: earthquake.date,
-        location: earthquake.location,
-        lat: earthquake.lat,
-        lng: earthquake.lng,
-        mag: earthquake.mag,
-        depth: earthquake.depth,
-      },
-    }),
-  })
-    .then((response) => console.log("Sent", response.text))
-    .catch((error) => console.log("Sending error", error));
-  writeEQToFile(`${earthquake.mag}-${earthquake.location}`);
 };
 
 const sendTweet = (earthquake) => {
